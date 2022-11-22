@@ -214,7 +214,7 @@ class FirstScreen(tk.Tk):
                 status = client_socket.recv(1024).decode()
                 client_socket.send('signupStep'.encode())
 
-                if status == 'true_pass':
+                if status == 'true_pass' or status == 'wrong_pass':
                     client_socket.close()
                     messagebox.showinfo(title="Error!", message='Exist account\n' 
                                                                     'Try again later')
@@ -397,7 +397,7 @@ class ChatScreen(tk.Canvas):
         insertImg_emoji_label = tk.Label(self, image=insertImg_emojis, text=insertImg_emoji_unicode, bg="#7d7d7d", cursor="hand2", borderwidth=1, relief="solid")
         insertImg_emoji_label.image = insertImg_emojis
         insertImg_emoji_label.place(x=340, y=601)
-        insertImg_emoji_label.bind('<Button-1>', self.add_img)
+        insertImg_emoji_label.bind('<Button-1>', self.add_img_format)
 
         insertURL_emojis = Image.open('emojis/insertURL.png')
         insertURL_emojis = insertURL_emojis.resize((29, 28), Image.ANTIALIAS)
@@ -437,7 +437,7 @@ class ChatScreen(tk.Canvas):
     def display_emoji(self, event=None):
         pass
 
-    def add_img(self, event=None):
+    def add_img_format(self, event=None):
         self.image_path = filedialog.askopenfilename()
         image_name = os.path.basename(self.image_path)
         self.image_extension = image_name[image_name.rfind('.')+1:]
@@ -450,15 +450,14 @@ class ChatScreen(tk.Canvas):
 
             self.image_path = 'resized'+image_name
             text_image = Image.open(self.image_path)
+            text_image = ImageTk.PhotoImage(text_image)
             
             from_ = self.user_id
 
-            data = {'from': from_, 'text_image': text_image}
+            data = {'from': from_, 'image': self.image_path}
             data_bytes = pickle.dumps(data)
 
             self.client_socket.send(data_bytes)
-
-            text_image = ImageTk.PhotoImage(text_image)
 
             m_frame = tk.Frame(self.scrollable_frame, bg="#595656")
 
@@ -488,7 +487,7 @@ class ChatScreen(tk.Canvas):
                 data_type = self.client_socket.recv(1024).decode()
 
                 if data_type == 'notification':
-                    data_size = self.client_socket.recv(2048)
+                    data_size = self.client_socket.recv(1024*2)
                     data_size_int = struct.unpack('i', data_size)[0]
 
                     b = b''
@@ -500,10 +499,15 @@ class ChatScreen(tk.Canvas):
                     data = pickle.loads(b)
                     self.notification_format(data)
 
-                else:
+                elif data_type == 'message':
                     data_bytes = self.client_socket.recv(1024)
                     data = pickle.loads(data_bytes)
                     self.received_message_format(data)
+
+                elif data_type == 'image':
+                    data_bytes = self.client_socket.recv(1024)
+                    data = pickle.loads(data_bytes)
+                    self.received_image_format(data)
 
             except ConnectionAbortedError:
                 print("you disconnected ...")
@@ -552,6 +556,46 @@ class ChatScreen(tk.Canvas):
 
         m_label = tk.Label(m_frame, wraplength=250,fg="black", bg="#c5c7c9", text=message, font="lucida 9 bold", justify="left",
                            anchor="w")
+        m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
+
+        i_label = tk.Label(m_frame, bg="#595656", image=im)
+        i_label.image = im
+        i_label.grid(row=0, column=0, rowspan=2)
+
+        m_frame.pack(pady=10, padx=10, fill="x", expand=True, anchor="e")
+
+        self.canvas.update_idletasks()
+        self.canvas.yview_moveto(1.0)
+
+    def received_image_format(self, data):
+    
+        image_path = data['image']
+        from_ = data['from']
+
+        sender_image = self.clients_connected[from_][1]
+        sender_image_extension = self.clients_connected[from_][2]
+
+        # if not os.path.exists(f"{from_}.{sender_image_extension}"):
+        with open(f"{from_}.{sender_image_extension}", 'wb') as f:
+            f.write(sender_image)
+
+        im = Image.open(f"{from_}.{sender_image_extension}")
+        im = im.resize((40, 40), Image.ANTIALIAS)
+        im = ImageTk.PhotoImage(im)
+
+        m_frame = tk.Frame(self.scrollable_frame, bg="#595656")
+
+        m_frame.columnconfigure(1, weight=1)
+
+        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=datetime.now().strftime('%H:%M'), font="lucida 7 bold",
+                           justify="left", anchor="w")
+        t_label.grid(row=0, column=1, padx=2, sticky="w")
+
+        text_image = Image.open(image_path)
+        text_image = ImageTk.PhotoImage(text_image)
+        m_label = tk.Label(m_frame, wraplength=250, image=text_image, 
+                                justify="left", anchor="w")
+        m_label.image=text_image
         m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
 
         i_label = tk.Label(m_frame, bg="#595656", image=im)
