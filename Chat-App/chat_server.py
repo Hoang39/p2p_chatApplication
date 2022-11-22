@@ -46,12 +46,14 @@ def connection_requests():
 
             if client_socket.recv(1024).decode() == 'loginStep':
                 client_socket.close()
-                continue 
+                continue
+            else:
+                listOfUser[client_name] = client_pass
 
         elif (listOfUser.get(client_name) != client_pass):
             client_socket.send('wrong_pass'.encode())
 
-            if client_socket.recv(1024).decode() == 'loginStep':
+            if client_socket.recv(1024).decode() == 'loginStep' or client_socket.recv(1024).decode() == 'signupStep':
                 client_socket.close()
                 continue 
         else:
@@ -109,6 +111,7 @@ def receive_data(client_socket):
     while True:
         try:
             data_bytes = client_socket.recv(1024)
+
         except ConnectionResetError:
             print(f"{clients_connected[client_socket][0]} disconnected")
 
@@ -146,10 +149,16 @@ def receive_data(client_socket):
             client_socket.close()
             break
 
+        data = pickle.loads(data_bytes)
+
         for client in clients_connected:
             if client != client_socket:
-                client.send('message'.encode())
-                client.send(data_bytes)
+                if data.get('message') != None:
+                    client.send('message'.encode())
+                    client.send(data_bytes)
+                elif data.get('image') != None:
+                    client.send('image'.encode())
+                    client.send(data_bytes)
 
 
 connection_requests()
