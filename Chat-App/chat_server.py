@@ -159,8 +159,11 @@ def receive_data(client_socket):
                 elif data.get('image') != None:
                     client.send('image'.encode())
                     client.send(data_bytes)
-                else:
+                elif data.get('file') != None:
                     client.send('file'.encode())
+                    client.send(data_bytes)
+                elif data.get('from') != None and clients_connected[client][0] == data.get('toName'):
+                    client.send('toClient'.encode())
                     client.send(data_bytes)
 
 
