@@ -17,6 +17,7 @@ try:
 except:
     pass
 
+extensionImgSupport = ['ppm', 'png', 'jpg', 'jpeg', 'gif', 'tiff', 'bmp'];
 
 class FirstScreen(tk.Tk):
     def __init__(self):
@@ -44,11 +45,11 @@ class FirstScreen(tk.Tk):
         self.iconphoto(False, app_logo)
 
         background = Image.open("images/login_bg_ca.jpg")
-        background = background.resize((550, 400), Image.ANTIALIAS)
+        background = background.resize((550, 400), Image.Resampling.LANCZOS)
         background = ImageTk.PhotoImage(background)
 
         upload_image = Image.open('images/upload_ca.png')
-        upload_image = upload_image.resize((38, 25), Image.ANTIALIAS)
+        upload_image = upload_image.resize((38, 25), Image.Resampling.LANCZOS)
         upload_image = ImageTk.PhotoImage(upload_image)
 
         self.user_image = 'images/user.png'
@@ -98,7 +99,7 @@ class FirstScreen(tk.Tk):
 
         if self.image_path:
             user_image = Image.open(self.image_path)
-            user_image = user_image.resize((150, 140), Image.ANTIALIAS)
+            user_image = user_image.resize((150, 140), Image.Resampling.LANCZOS)
             user_image.save('resized'+image_name)
             user_image.close()
 
@@ -286,17 +287,17 @@ class ChatScreen(tk.Canvas):
         self.parent.resizable(1, 1)
 
         user_image = Image.open(self.parent.image_path)
-        user_image = user_image.resize((40, 40), Image.ANTIALIAS)
+        user_image = user_image.resize((40, 40), Image.Resampling.LANCZOS)
         self.user_image = ImageTk.PhotoImage(user_image)
 
         # global background
         # background = Image.open("images/chat_bg_ca.jpg")
-        # background = background.resize((1600, 1500), Image.ANTIALIAS)
+        # background = background.resize((1600, 1500), Image.Resampling.LANCZOS)
         # background = ImageTk.PhotoImage(background)
 
         global group_photo
         group_photo = Image.open('images/group_ca.png')
-        group_photo = group_photo.resize((60, 60), Image.ANTIALIAS)
+        group_photo = group_photo.resize((60, 60), Image.Resampling.LANCZOS)
         group_photo = ImageTk.PhotoImage(group_photo)
 
         self.y = 140
@@ -314,8 +315,7 @@ class ChatScreen(tk.Canvas):
         self.create_image(60, 40, image=group_photo)
 
         container = tk.Frame(self)
-        # 595656
-        # d9d5d4
+        
         container.place(x=40, y=120, width=450, height=480)
         self.canvas = tk.Canvas(container, bg="#595656")
         self.scrollable_frame = tk.Frame(self.canvas, bg="#595656")
@@ -339,9 +339,9 @@ class ChatScreen(tk.Canvas):
         self.canvas.bind("<Configure>", resize_frame)
         self.canvas.pack(fill="both", expand=True)
 
-        # ---------------------------emoji code logic-----------------------------------
+        # ---------------------------emoji-----------------------------------
 
-        emoji_data = [('emojis/u0001f44a.png', '\U0001F44A'), ('emojis/u0001f44c.png', '\U0001F44C'), ('emojis/u0001f44d.png', '\U0001F44D'),
+        self.emoji_data = [('emojis/u0001f44a.png', '\U0001F44A'), ('emojis/u0001f44c.png', '\U0001F44C'), ('emojis/u0001f44d.png', '\U0001F44D'),
                       ('emojis/u0001f495.png', '\U0001F495'), ('emojis/u0001f496.png', '\U0001F496'), ('emojis/u0001f4a6.png', '\U0001F4A6'),
                       ('emojis/u0001f4a9.png', '\U0001F4A9'), ('emojis/u0001f4af.png', '\U0001F4AF'), ('emojis/u0001f595.png', '\U0001F595'),
                       ('emojis/u0001f600.png', '\U0001F600'), ('emojis/u0001f602.png', '\U0001F602'), ('emojis/u0001f603.png', '\U0001F603'),
@@ -352,62 +352,45 @@ class ChatScreen(tk.Canvas):
                       ('emojis/u0001f631.png', '\U0001F631'), ('emojis/u0001f632.png', '\U0001F632'), ('emojis/u0001f634.png', '\U0001F634'),
                       ('emojis/u0001f637.png', '\U0001F637'), ('emojis/u0001f642.png', '\U0001F642'), ('emojis/u0001f64f.png', '\U0001F64F'),
                       ('emojis/u0001f920.png', '\U0001F920'), ('emojis/u0001f923.png', '\U0001F923'), ('emojis/u0001f928.png', '\U0001F928')]
+        
+        self.emoji_labels =[None] * 33
 
-        emoji_x_pos = 490
-        emoji_y_pos = 450
-        for Emoji in emoji_data:
-            global emojis
-            emojis = Image.open(Emoji[0])
-            emojis = emojis.resize((20, 20), Image.ANTIALIAS)
-            emojis = ImageTk.PhotoImage(emojis)
-
-            emoji_unicode = Emoji[1]
-            emoji_label = tk.Label(self, image=emojis, text=emoji_unicode, bg="#194548", cursor="hand2")
-            emoji_label.image = emojis
-            emoji_label.place(x=emoji_x_pos, y=emoji_y_pos)
-            emoji_label.bind('<Button-1>', lambda x: self.insert_emoji(x))
-
-            emoji_x_pos += 25
-            cur_index = emoji_data.index(Emoji)
-            if (cur_index + 1) % 6 == 0:
-                emoji_y_pos += 25
-                emoji_x_pos = 490
-
-        # -------------------end of emoji code logic-------------------------------------
+        self.flag_emoji = 1
+        # -------------------end of emoji-------------------------------------
 
         send_button = tk.Button(self, text="Send", fg="#83eaf7", font="lucida 11 bold", bg="#7d7d7d", padx=10,
                                 relief="solid", bd=2, cursor="hand2", command=self.sent_message_format)
         send_button.place(x=400, y=600)
 
         button_emojis = Image.open('emojis/u0001f642.png')
-        button_emojis = button_emojis.resize((29, 28), Image.ANTIALIAS)
+        button_emojis = button_emojis.resize((29, 28), Image.Resampling.LANCZOS)
         button_emojis = ImageTk.PhotoImage(button_emojis)
 
         button_emoji_unicode = '\U0001F642'
         button_emoji_label = tk.Label(self, image=button_emojis, text=button_emoji_unicode, bg="#7d7d7d", cursor="hand2", borderwidth=1, relief="solid")
         button_emoji_label.image = button_emojis
         button_emoji_label.place(x=370, y=601)
-        button_emoji_label.bind('<Button-1>', lambda emojis : self.display_emoji(emojis))
+        button_emoji_label.bind('<Button-1>', self.display_emoji)
 
         insertImg_emojis = Image.open('emojis/insertImg.png')
-        insertImg_emojis = insertImg_emojis.resize((29, 28), Image.ANTIALIAS)
+        insertImg_emojis = insertImg_emojis.resize((29, 28), Image.Resampling.LANCZOS)
         insertImg_emojis = ImageTk.PhotoImage(insertImg_emojis)
 
         insertImg_emoji_unicode = '\U0001F642'
         insertImg_emoji_label = tk.Label(self, image=insertImg_emojis, text=insertImg_emoji_unicode, bg="#7d7d7d", cursor="hand2", borderwidth=1, relief="solid")
         insertImg_emoji_label.image = insertImg_emojis
         insertImg_emoji_label.place(x=340, y=601)
-        insertImg_emoji_label.bind('<Button-1>', self.add_img_format)
+        insertImg_emoji_label.bind('<Button-1>', self.send_img_format)
 
         insertURL_emojis = Image.open('emojis/insertURL.png')
-        insertURL_emojis = insertURL_emojis.resize((29, 28), Image.ANTIALIAS)
+        insertURL_emojis = insertURL_emojis.resize((29, 28), Image.Resampling.LANCZOS)
         insertURL_emojis = ImageTk.PhotoImage(insertURL_emojis)
 
         insertURL_emoji_unicode = '\U0001F642'
         insertURL_emoji_label = tk.Label(self, image=insertURL_emojis, text=insertURL_emoji_unicode, bg="#7d7d7d", cursor="hand2", borderwidth=1, relief="solid")
         insertURL_emoji_label.image = insertURL_emojis
         insertURL_emoji_label.place(x=310, y=601)
-        insertURL_emoji_label.bind('<Button-1>', lambda x: self.insert_emoji(x))
+        insertURL_emoji_label.bind('<Button-1>', self.send_file_format)
 
         self.entry = tk.Text(self, font="lucida 10 bold", width=38, height=2,
                              highlightcolor="blue", highlightthickness=1)
@@ -431,20 +414,49 @@ class ChatScreen(tk.Canvas):
         self.clients_online([])
 
         t = threading.Thread(target=self.receive_data)
-        t.setDaemon(True)
+        t.daemon = True
         t.start()
 
     def display_emoji(self, event=None):
-        pass
+        if self.flag_emoji == 1:
+            emoji_x_pos = 490
+            emoji_y_pos = 450
+            for Emoji in self.emoji_data:
+                global emojis
+                emojis = Image.open(Emoji[0])
+                emojis = emojis.resize((20, 20), Image.Resampling.LANCZOS)
+                emojis = ImageTk.PhotoImage(emojis)
 
-    def add_img_format(self, event=None):
+                cur_index = self.emoji_data.index(Emoji)
+                emoji_unicode = Emoji[1]
+                self.emoji_labels[cur_index] = tk.Label(self, image=emojis, text=emoji_unicode, bg="#194548", cursor="hand2")
+                self.emoji_labels[cur_index].image = emojis
+                self.emoji_labels[cur_index].place(x=emoji_x_pos, y=emoji_y_pos)
+                self.emoji_labels[cur_index].bind('<Button-1>', lambda x: self.insert_emoji(x))
+
+                emoji_x_pos += 25
+                
+                if (cur_index + 1) % 6 == 0:
+                    emoji_y_pos += 25
+                    emoji_x_pos = 490
+            self.flag_emoji = 0
+        else:
+            for emoji_label in self.emoji_labels:
+                emoji_label.place_forget()
+            self.flag_emoji = 1
+
+    def send_img_format(self, event=None):
         self.image_path = filedialog.askopenfilename()
         image_name = os.path.basename(self.image_path)
         self.image_extension = image_name[image_name.rfind('.')+1:]
-        
+
+        if self.image_extension not in extensionImgSupport:
+            messagebox.showinfo(title='Error File', message="The file is not supported!")
+            return
+
         if self.image_path:
             text_image = Image.open(self.image_path)
-            text_image = text_image.resize((150, 140), Image.ANTIALIAS)
+            text_image = text_image.resize((150, 140), Image.Resampling.LANCZOS)
             text_image.save('resized'+image_name)
             text_image.close()
 
@@ -470,6 +482,41 @@ class ChatScreen(tk.Canvas):
             m_label = tk.Label(m_frame, wraplength=250, image=text_image, 
                                 justify="left", anchor="e")
             m_label.image=text_image
+            m_label.grid(row=1, column=0, padx=2, pady=2, sticky="e")
+
+            i_label = tk.Label(m_frame, bg="#595656", image=self.user_image)
+            i_label.image = self.user_image
+            i_label.grid(row=0, column=1, rowspan=2, sticky="e")
+
+            m_frame.pack(pady=10, padx=10, fill="x", expand=True, anchor="e")
+
+            self.canvas.update_idletasks()
+            self.canvas.yview_moveto(1.0)
+
+    def send_file_format(self, event=None):
+        self.file_path = filedialog.askopenfilename()
+        file_name = os.path.basename(self.file_path)
+        self.file_extension = file_name[file_name.rfind('.')+1:]
+        
+        if self.file_path:
+            from_ = self.user_id
+
+            data = {'from': from_, 'file': self.file_path}
+            data_bytes = pickle.dumps(data)
+
+            self.client_socket.send(data_bytes)
+
+            m_frame = tk.Frame(self.scrollable_frame, bg="#595656")
+
+            m_frame.columnconfigure(0, weight=1)
+
+            t_label = tk.Label(m_frame, bg="#595656", fg="white", text=datetime.now().strftime('%H:%M'),
+                               font="lucida 7 bold", justify="right", anchor="e")
+            t_label.grid(row=0, column=0, padx=2, sticky="e")
+
+            m_label = tk.Button(m_frame, wraplength=250, text=file_name, fg="black", bg="#40C961",
+                               font="lucida 9 bold", justify="left",
+                               anchor="e", command= lambda: self.openFile(self.file_path))
             m_label.grid(row=1, column=0, padx=2, pady=2, sticky="e")
 
             i_label = tk.Label(m_frame, bg="#595656", image=self.user_image)
@@ -509,6 +556,11 @@ class ChatScreen(tk.Canvas):
                     data = pickle.loads(data_bytes)
                     self.received_image_format(data)
 
+                else:
+                    data_bytes = self.client_socket.recv(1024)
+                    data = pickle.loads(data_bytes)
+                    self.received_file_format(data)
+
             except ConnectionAbortedError:
                 print("you disconnected ...")
                 self.client_socket.close()
@@ -543,7 +595,7 @@ class ChatScreen(tk.Canvas):
             f.write(sender_image)
 
         im = Image.open(f"{from_}.{sender_image_extension}")
-        im = im.resize((40, 40), Image.ANTIALIAS)
+        im = im.resize((40, 40), Image.Resampling.LANCZOS)
         im = ImageTk.PhotoImage(im)
 
         m_frame = tk.Frame(self.scrollable_frame, bg="#595656")
@@ -580,7 +632,7 @@ class ChatScreen(tk.Canvas):
             f.write(sender_image)
 
         im = Image.open(f"{from_}.{sender_image_extension}")
-        im = im.resize((40, 40), Image.ANTIALIAS)
+        im = im.resize((40, 40), Image.Resampling.LANCZOS)
         im = ImageTk.PhotoImage(im)
 
         m_frame = tk.Frame(self.scrollable_frame, bg="#595656")
@@ -596,6 +648,43 @@ class ChatScreen(tk.Canvas):
         m_label = tk.Label(m_frame, wraplength=250, image=text_image, 
                                 justify="left", anchor="w")
         m_label.image=text_image
+        m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
+
+        i_label = tk.Label(m_frame, bg="#595656", image=im)
+        i_label.image = im
+        i_label.grid(row=0, column=0, rowspan=2)
+
+        m_frame.pack(pady=10, padx=10, fill="x", expand=True, anchor="e")
+
+        self.canvas.update_idletasks()
+        self.canvas.yview_moveto(1.0)
+
+    def received_file_format(self, data):
+        
+        file_path = data['file']
+        from_ = data['from']
+
+        sender_image = self.clients_connected[from_][1]
+        sender_image_extension = self.clients_connected[from_][2]
+
+        # if not os.path.exists(f"{from_}.{sender_image_extension}"):
+        with open(f"{from_}.{sender_image_extension}", 'wb') as f:
+            f.write(sender_image)
+
+        im = Image.open(f"{from_}.{sender_image_extension}")
+        im = im.resize((40, 40), Image.Resampling.LANCZOS)
+        im = ImageTk.PhotoImage(im)
+
+        m_frame = tk.Frame(self.scrollable_frame, bg="#595656")
+
+        m_frame.columnconfigure(1, weight=1)
+
+        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=datetime.now().strftime('%H:%M'), font="lucida 7 bold",
+                           justify="left", anchor="w")
+        t_label.grid(row=0, column=1, padx=2, sticky="w")
+
+        m_label = tk.Button(m_frame, wraplength=250,fg="black", bg="#c5c7c9", text=os.path.basename(file_path), font="lucida 9 bold", justify="left",
+                           anchor="w", command= lambda: self.openFile(file_path))
         m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
 
         i_label = tk.Label(m_frame, bg="#595656", image=im)
@@ -690,7 +779,7 @@ class ChatScreen(tk.Canvas):
                 self.all_user_image[user_id] = f"{user_id}.{extension}"
 
                 user = Image.open(f"{user_id}.{extension}")
-                user = user.resize((45, 45), Image.ANTIALIAS)
+                user = user.resize((45, 45), Image.Resampling.LANCZOS)
                 user = ImageTk.PhotoImage(user)
 
                 b = tk.Label(self, image=user, text=name, compound="left",fg="white", bg="#2b2b2b", font="lucida 10 bold", padx=15)
@@ -713,7 +802,7 @@ class ChatScreen(tk.Canvas):
             self.all_user_image[user_id] = f"{user_id}.{extension}"
 
             user = Image.open(f"{user_id}.{extension}")
-            user = user.resize((45, 45), Image.ANTIALIAS)
+            user = user.resize((45, 45), Image.Resampling.LANCZOS)
             user = ImageTk.PhotoImage(user)
 
             b = tk.Label(self, image=user, text=name, compound="left", fg="white", bg="#2b2b2b",
@@ -743,6 +832,9 @@ class ChatScreen(tk.Canvas):
 
     def insert_emoji(self, x):
         self.entry.insert("end-1c", x.widget['text'])
+
+    def openFile(self, file_path):
+        os.startfile(os.path.abspath(file_path)) 
 
     def first_screen(self):
         self.destroy()
