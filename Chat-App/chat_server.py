@@ -9,6 +9,7 @@ server_socket.listen(4)
 
 clients_connected = {}
 clients_data = {}
+clients_port = {}
 count = 1
 
 listOfUser = {
@@ -67,6 +68,7 @@ def connection_requests():
         print(f"{address} identified itself as {client_name}")
 
         clients_connected[client_socket] = (client_name, count)
+        clients_port[client_socket] = address
 
         image_size_bytes = client_socket.recv(1024)
         image_size_int = struct.unpack('i', image_size_bytes)[0]
@@ -151,6 +153,19 @@ def receive_data(client_socket):
 
         data = pickle.loads(data_bytes)
 
+        if data.get('to') != None:
+            client_socket.send('sendPort'.encode())
+            
+            i = 0
+            Port = 0
+            for port in clients_port[client_socket]:
+                if (i == 1):
+                    Port = port
+                else: i = 1
+            
+            client_socket.send(str(Port).encode('utf-8'))
+            client_socket.send(data_bytes)
+
         for client in clients_connected:
             if client != client_socket:
                 if data.get('message') != None:
@@ -162,9 +177,15 @@ def receive_data(client_socket):
                 elif data.get('file') != None:
                     client.send('file'.encode())
                     client.send(data_bytes)
-                elif data.get('from') != None and clients_connected[client][0] == data.get('toName'):
+                elif clients_connected[client][0] == data.get('toName'):
                     client.send('toClient'.encode())
-                    client.send(data_bytes)
+                    i = 0
+                    Port = 0
+                    for port in clients_port[client_socket]:
+                        if (i == 1):
+                            Port = port
+                        else: i = 1
 
+                    client.send(str(Port).encode('utf-8'))
 
 connection_requests()
