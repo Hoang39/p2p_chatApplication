@@ -625,7 +625,7 @@ class ChatScreen(tk.Canvas):
 
         m_frame.columnconfigure(1, weight=1)
 
-        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=datetime.now().strftime('%H:%M'), font="lucida 7 bold",
+        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=self.clients_connected[from_][0] + ' - ' + datetime.now().strftime('%H:%M'), font="lucida 7 bold",
                            justify="left", anchor="w")
         t_label.grid(row=0, column=1, padx=2, sticky="w")
 
@@ -662,7 +662,7 @@ class ChatScreen(tk.Canvas):
 
         m_frame.columnconfigure(1, weight=1)
 
-        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=datetime.now().strftime('%H:%M'), font="lucida 7 bold",
+        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=self.clients_connected[from_][0] + ' - ' + datetime.now().strftime('%H:%M'), font="lucida 7 bold",
                            justify="left", anchor="w")
         t_label.grid(row=0, column=1, padx=2, sticky="w")
 
@@ -702,7 +702,7 @@ class ChatScreen(tk.Canvas):
 
         m_frame.columnconfigure(1, weight=1)
 
-        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=datetime.now().strftime('%H:%M'), font="lucida 7 bold",
+        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=self.clients_connected[from_][0] + ' - ' + datetime.now().strftime('%H:%M'), font="lucida 7 bold",
                            justify="left", anchor="w")
         t_label.grid(row=0, column=1, padx=2, sticky="w")
 
@@ -915,7 +915,7 @@ class ChatScreen(tk.Canvas):
 
         m_frame.columnconfigure(1, weight=1)
 
-        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=datetime.now().strftime('%H:%M'), font="lucida 7 bold",
+        t_label = tk.Label(m_frame, bg="#595656",fg="white", text=self.clients_connected[from_id][0] + ' - ' + datetime.now().strftime('%H:%M'), font="lucida 7 bold",
                            justify="left", anchor="w")
         t_label.grid(row=0, column=1, padx=2, sticky="w")
 
@@ -923,7 +923,7 @@ class ChatScreen(tk.Canvas):
                            anchor="w")
         m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
 
-        r_label = tk.Label(m_frame, wraplength=250,fg="black", bg="#595656", text='from '+self.clients_connected[from_id][0], font="lucida 7", justify="left",
+        r_label = tk.Label(m_frame, wraplength=250,fg="black", bg="#595656", text='Only you', font="lucida 7", justify="left",
                            anchor="w")
         r_label.grid(row=2, column=1, padx=2, pady=2, sticky="w")
 
