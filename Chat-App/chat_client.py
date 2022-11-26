@@ -262,7 +262,6 @@ class ChatScreen(tk.Canvas):
         super().__init__(parent, bg="#2b2b2b")
 
         self.window = 'ChatScreen'
-        self.message = None
 
         self.first_frame = first_frame
         self.first_frame.pack_forget()
@@ -408,6 +407,7 @@ class ChatScreen(tk.Canvas):
         self.pack(fill="both", expand=True)
 
         self.clients_online([])
+        self.privateMessage = ''
 
         t = threading.Thread(target=self.receive_data)
         t.daemon = True
@@ -558,16 +558,39 @@ class ChatScreen(tk.Canvas):
                     self.received_file_format(data)
 
                 elif data_type == 'toClient':
-                    data_bytes = self.client_socket.recv(1024)
+                    toPort = int(self.client_socket.recv(1024).decode('utf-8'))
+                    client_fromClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    client_fromClient.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    client_fromClient.bind(("localhost", toPort))
+                    client_fromClient.listen(1)
+                    client, addr = client_fromClient.accept()
+
+                    client.send('connect'.encode())
+                    data_bytes = client.recv(1024)
                     data = pickle.loads(data_bytes)
+
                     self.received_message_toClient(data)
+
+                elif data_type == 'sendPort':
+                    toPort = int(self.client_socket.recv(1024).decode('utf-8'))
+                    data_bytes = self.client_socket.recv(1024)
+                    client_toClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    client_toClient.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    client_toClient.connect(("localhost", toPort))
+                    
+                    if client_toClient.recv(1024).decode() == 'connect':
+                        data = pickle.loads(data_bytes)
+                        data['message'] = self.privateMessage
+                        data_bytes = pickle.dumps(data)
+                        client_toClient.send(data_bytes)
+
 
             except ConnectionAbortedError:
                 print("you disconnected ...")
                 self.client_socket.close()
                 break
             except ConnectionResetError:
-                messagebox.showinfo(title='No Connection !', message="Server offline! Try connecting again later")
+                messagebox.showinfo(title='No Connection!', message="Server offline! Try connecting again later")
                 self.client_socket.close()
                 self.first_screen()
                 break
@@ -827,9 +850,10 @@ class ChatScreen(tk.Canvas):
     def send_message_toClient(self, user_id):
         
         message = self.entry.get('1.0', 'end-1c')
+        message = message.strip()
+        self.privateMessage = message
 
         if message != "" and user_id[0] != user_id[1]:
-            message = message.strip()
             self.entry.delete("1.0", "end-1c")
 
             m_frame = tk.Frame(self.scrollable_frame, bg="#595656")
@@ -865,7 +889,6 @@ class ChatScreen(tk.Canvas):
             self.canvas.update_idletasks()
             self.canvas.yview_moveto(1.0)
 
-            self.message = message
             data = {'from': user_id[0], 'to': user_id[1], 'toName': self.clients_connected[user_id[1]][0]}
             data_bytes = pickle.dumps(data)
 
@@ -875,6 +898,7 @@ class ChatScreen(tk.Canvas):
     def received_message_toClient(self, data):
         from_id = data['from']
         to_id = data['to']
+        message = data['message']
 
         sender_image = self.clients_connected[to_id][1]
         sender_image_extension = self.clients_connected[to_id][2]
@@ -895,7 +919,7 @@ class ChatScreen(tk.Canvas):
                            justify="left", anchor="w")
         t_label.grid(row=0, column=1, padx=2, sticky="w")
 
-        m_label = tk.Label(m_frame, wraplength=250,fg="black", bg="#c5c7c9", text=self.message, font="lucida 9 bold", justify="left",
+        m_label = tk.Label(m_frame, wraplength=250,fg="black", bg="#c5c7c9", text=message, font="lucida 9 bold", justify="left",
                            anchor="w")
         m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
 
