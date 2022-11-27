@@ -132,6 +132,10 @@ class FirstScreen(tk.Tk):
                     messagebox.showinfo(title="Can't connect!", message='Sorry, server is completely occupied.'
                                                                          'Try again later')
                     return
+
+                #elif status == 'allowed':
+                #    Port = int(self.client_socket.recv(1024).decode('utf-8'))
+
                 
                 client_socket.send(self.user.encode('utf-8'))
 
@@ -333,6 +337,66 @@ class ChatScreen(tk.Canvas):
 
         self.canvas.bind("<Configure>", resize_frame)
         self.canvas.pack(fill="both", expand=True)
+
+        #---------------------------load chat box----------------------------
+        db = open("chatbox.txt", "r")
+
+        for line in db: 
+            line = line[:-1]
+            info = line.split(' ', 4)
+
+            from_ = int(info[0])
+            if self.clients_connected.get(from_) == None:
+                continue
+            sender_image = self.clients_connected[from_][1]
+            sender_image_extension = self.clients_connected[from_][2]
+
+            # if not os.path.exists(f"{from_}.{sender_image_extension}"):
+            with open(f"{from_}.{sender_image_extension}", 'wb') as f:
+                f.write(sender_image)
+
+            im = Image.open(f"{from_}.{sender_image_extension}")
+            im = im.resize((40, 40), Image.Resampling.LANCZOS)
+            im = ImageTk.PhotoImage(im)
+
+            m_frame = tk.Frame(self.scrollable_frame, bg="#595656")
+
+            m_frame.columnconfigure(1, weight=1)
+
+            t_label = tk.Label(m_frame, bg="#595656",fg="white", text=self.clients_connected[from_][0] + ' - ' + info[2], font="lucida 7 bold",
+                            justify="left", anchor="w")
+            t_label.grid(row=0, column=1, padx=2, sticky="w")
+
+            if info[3] == 'message':
+                m_label = tk.Label(m_frame, wraplength=250,fg="black", bg="#c5c7c9", text=info[4], font="lucida 9 bold", justify="left",
+                                anchor="w")
+                m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
+
+            elif info[3] == 'image':
+                text_image = Image.open(info[4])
+                text_image = ImageTk.PhotoImage(text_image)
+                m_label = tk.Label(m_frame, wraplength=250, image=text_image, 
+                                        justify="left", anchor="w")
+                m_label.image=text_image
+                m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
+
+            elif info[3] == 'file':
+                m_label = tk.Button(m_frame, wraplength=250,fg="black", bg="#c5c7c9", text=os.path.basename(info[4]), font="lucida 9 bold", justify="left",
+                           anchor="w", command= lambda: self.openFile(info[4]))
+                m_label.grid(row=1, column=1, padx=2, pady=2, sticky="w")
+
+            i_label = tk.Label(m_frame, bg="#595656", image=im)
+            i_label.image = im
+            i_label.grid(row=0, column=0, rowspan=2)
+
+            m_frame.pack(pady=10, padx=10, fill="x", expand=True, anchor="e")
+
+            self.canvas.update_idletasks()
+            self.canvas.yview_moveto(1.0)
+        
+        db.close()
+
+        #---------------------------end chat box-----------------------------
 
         # ---------------------------emoji-----------------------------------
 
