@@ -2,6 +2,8 @@ import socket
 import struct
 import pickle
 import threading
+from datetime import datetime
+import hashlib
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind(('', 5000))
@@ -13,9 +15,11 @@ clients_port = {}
 count = 1
 
 listOfUser = {
-    "admin": "123456",
-    "hoang": "123456"
+    "admin": "e10adc3949ba59abbe56e057f20f883e",
+    "hoang": "e10adc3949ba59abbe56e057f20f883e"
 }
+
+open("chatbox.txt",'w').close()
 
 def connection_requests():
     global count
@@ -32,6 +36,14 @@ def connection_requests():
             continue
         else:
             client_socket.send('allowed'.encode())
+            #i = 0
+            #Port = 0
+            #for port in address:
+            #    if (i == 1):
+            #        Port = port
+            #    else: i = 1
+            #client_socket.send(str(Port).encode('utf-8'))
+            
 
         try:
             client_name = client_socket.recv(1024).decode('utf-8')
@@ -49,9 +61,9 @@ def connection_requests():
                 client_socket.close()
                 continue
             else:
-                listOfUser[client_name] = client_pass
+                listOfUser[client_name] = hashlib.md5(client_pass.encode()).hexdigest()
 
-        elif (listOfUser.get(client_name) != client_pass):
+        elif (listOfUser.get(client_name) != hashlib.md5(client_pass.encode()).hexdigest()):
             client_socket.send('wrong_pass'.encode())
 
             if client_socket.recv(1024).decode() == 'loginStep' or client_socket.recv(1024).decode() == 'signupStep':
@@ -165,6 +177,17 @@ def receive_data(client_socket):
             
             client_socket.send(str(Port).encode('utf-8'))
             client_socket.send(data_bytes)
+
+        if data.get('to') == None:
+            db = open("chatbox.txt", "a")
+            db.write(str(data['from']) + ' ' + clients_connected[client_socket][0] + ' ' + datetime.now().strftime('%H:%M'))
+            if data.get('message') != None:
+                db.write(' message ' + data['message'] + '\n')
+            elif data.get('image') != None:
+                db.write(' image ' + data['image'] + '\n')
+            elif data.get('file') != None:
+                db.write(' file ' + data['file'] + '\n')
+            db.close()
 
         for client in clients_connected:
             if client != client_socket:
