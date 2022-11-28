@@ -165,19 +165,6 @@ def receive_data(client_socket):
 
         data = pickle.loads(data_bytes)
 
-        if data.get('to') != None:
-            client_socket.send('sendPort'.encode())
-            
-            i = 0
-            Port = 0
-            for port in clients_port[client_socket]:
-                if (i == 1):
-                    Port = port
-                else: i = 1
-            
-            client_socket.send(str(Port).encode('utf-8'))
-            client_socket.send(data_bytes)
-
         if data.get('to') == None:
             db = open("chatbox.txt", "a")
             db.write(str(data['from']) + ' ' + clients_connected[client_socket][0] + ' ' + datetime.now().strftime('%H:%M'))
@@ -193,22 +180,18 @@ def receive_data(client_socket):
             if client != client_socket:
                 if data.get('message') != None:
                     client.send('message'.encode())
-                    client.send(data_bytes)
+                    
                 elif data.get('image') != None:
                     client.send('image'.encode())
-                    client.send(data_bytes)
+                    
                 elif data.get('file') != None:
                     client.send('file'.encode())
-                    client.send(data_bytes)
+                    
                 elif clients_connected[client][0] == data.get('toName'):
                     client.send('toClient'.encode())
-                    i = 0
-                    Port = 0
-                    for port in clients_port[client_socket]:
-                        if (i == 1):
-                            Port = port
-                        else: i = 1
-
-                    client.send(str(Port).encode('utf-8'))
+                
+                else: continue
+                
+                client.send(data_bytes)
 
 connection_requests()
