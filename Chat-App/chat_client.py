@@ -279,6 +279,8 @@ class ChatScreen(tk.Canvas):
 
         self.clients_connected = clients_connected
 
+        self.clients_socket = {}
+
         # self.parent.protocol("WM_DELETE_WINDOW", lambda: self.on_closing(self.first_frame))
         self.parent.protocol("WM_DELETE_WINDOW", self.on_closing)
 
@@ -622,32 +624,23 @@ class ChatScreen(tk.Canvas):
                     self.received_file_format(data)
 
                 elif data_type == 'toClient':
-                    toPort = int(self.client_socket.recv(1024).decode('utf-8'))
-                    client_fromClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    client_fromClient.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                    client_fromClient.bind(("localhost", toPort))
-                    client_fromClient.listen(1)
-                    client, addr = client_fromClient.accept()
+                    data_bytes = self.client_socket.recv(1024)
+                    data = pickle.loads(data_bytes)
+                    toPort = data['port']
 
-                    client.send('connect'.encode())
-                    data_bytes = client.recv(1024)
+                    if self.clients_socket.get(toPort) == None:
+                        client_fromClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        #client_fromClient.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                        client_fromClient.bind(("localhost", toPort))
+                        client_fromClient.listen(1)
+                        client, addr = client_fromClient.accept()
+                        self.clients_socket[toPort] = client
+
+                    self.clients_socket[toPort].send('connect'.encode())
+                    data_bytes = self.clients_socket[toPort].recv(1024)
                     data = pickle.loads(data_bytes)
 
                     self.received_message_toClient(data)
-
-                elif data_type == 'sendPort':
-                    toPort = int(self.client_socket.recv(1024).decode('utf-8'))
-                    data_bytes = self.client_socket.recv(1024)
-                    client_toClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                    client_toClient.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                    client_toClient.connect(("localhost", toPort))
-                    
-                    if client_toClient.recv(1024).decode() == 'connect':
-                        data = pickle.loads(data_bytes)
-                        data['message'] = self.privateMessage
-                        data_bytes = pickle.dumps(data)
-                        client_toClient.send(data_bytes)
-
 
             except ConnectionAbortedError:
                 print("you disconnected ...")
@@ -953,10 +946,23 @@ class ChatScreen(tk.Canvas):
             self.canvas.update_idletasks()
             self.canvas.yview_moveto(1.0)
 
-            data = {'from': user_id[0], 'to': user_id[1], 'toName': self.clients_connected[user_id[1]][0]}
+            toPort = int(str(user_id[0])+str(user_id[1]))
+            data = {'from': user_id[0], 'to': user_id[1], 'toName': self.clients_connected[user_id[1]][0], 'port': toPort}
             data_bytes = pickle.dumps(data)
-
             self.client_socket.send(data_bytes)
+            
+            if self.clients_socket.get(toPort) == None:
+                client_toClient = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                #client_toClient.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                client_toClient.connect(("localhost", toPort))
+
+                self.clients_socket[toPort] = client_toClient
+                    
+            if self.clients_socket[toPort].recv(1024).decode() == 'connect':
+                data = pickle.loads(data_bytes)
+                data['message'] = self.privateMessage
+                data_bytes = pickle.dumps(data)
+                self.clients_socket[toPort].send(data_bytes)
 
 
     def received_message_toClient(self, data):
